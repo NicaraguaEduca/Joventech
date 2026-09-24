@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joven Tech - Pantalla de Bienvenida</title>
+
+    <!-- MQTT WebSockets -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+        :root {
+            --bg-dark: #050814;
+            --neon-cyan: #00f2fe;
+            --neon-magenta: #4facfe;
+            --neon-purple: #7f00ff;
+            --neon-pink: #ff007f;
+            --text-light: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Space Grotesk', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at 50% 30%, #0d1536 0%, #03050c 100%);
+        }
+
+        /* OVERLAY DE AUTORIZACIÓN Y AUDIO */
+        #audio-starter {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 5, 12, 0.96);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            color: #fff;
+            border: none;
+            padding: 22px 45px;
+            font-size: 1.5rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 50px rgba(127, 0, 255, 0.7);
+        }
+
+        /* HEADER */
+        header {
+            margin-top: 35px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .event-badge {
+            display: inline-block;
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        h1.main-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.2rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            background: linear-gradient(180deg, #ffffff 0%, #a1a8c9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        /* ESCENARIO PRINCIPAL */
+        .stage {
+            position: relative;
+            width: 100%;
+            height: 50vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+
+        canvas#siri-wave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            max-width: 1100px;
+            height: 320px;
+            pointer-events: none;
+        }
+
+        .greeting-card {
+            text-align: center;
+            z-index: 10;
+            opacity: 0;
+            transform: translateY(30px) scale(0.9);
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .greeting-card.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .welcome-label {
+            font-size: 1.8rem;
+            color: #94a3b8;
+            letter-spacing: 3px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .guest-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4.8rem;
+            font-weight: 900;
+            margin: 10px 0;
+            background: linear-gradient(90deg, #ffffff, var(--neon-cyan), #ffffff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shineText 4s linear infinite;
+            filter: drop-shadow(0 0 25px rgba(0, 242, 254, 0.6));
+        }
+
+        @keyframes shineText {
+            to { background-position: 200% center; }
+        }
+
+        .subtitle-event {
+            font-size: 1.5rem;
+            color: var(--neon-cyan);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        /* BARRA INFERIOR / RECIENTES */
+        .recent-bar {
+            width: 100%;
+            padding: 22px 40px;
+            background: rgba(10, 15, 30, 0.8);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .recent-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            color: #64748b;
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        .recent-list {
+            display: flex;
+            gap: 15px;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        .guest-tag {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            white-space: nowrap;
+            animation: fadeInTag 0.5s ease forwards;
+        }
+
+        @keyframes fadeInTag {
+            from { opacity: 0; transform: translateX(-15px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ESTADO DE ESPERA */
+        .idle-pulse {
+            font-size: 1.2rem;
+            color: #475569;
+            letter-spacing: 2px;
+            animation: pulseIdle 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseIdle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        /* PANEL DE CONTROL DEL OPERADOR / MODERACIÓN */
+        .operator-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(0, 242, 254, 0.4);
+            border-radius: 16px;
+            padding: 15px 20px;
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .operator-panel.collapsed {
+            transform: translateX(360px);
+            opacity: 0.2;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 8px;
+            font-size: 0.85rem;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-cyan);
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute; cursor: pointer; inset: 0;
+            background-color: #334155; transition: .3s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute; content: ""; height: 16px; width: 16px;
+            left: 3px; bottom: 3px; background-color: white;
+            transition: .3s; border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--neon-purple); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .pending-list {
+            max-height: 140px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .pending-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .btn-approve {
+            background: #10b981; color: white; border: none; padding: 4px 10px;
+            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem;
+        }
+
+        .btn-reject {
+            background: #ef4444; color: white; border: none; padding: 4px 10px;
+            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem; margin-left: 4px;
+        }
+
+        .toggle-panel-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 901;
+            background: #1e293b;
+            color: var(--neon-cyan);
+            border: 1px solid var(--neon-cyan);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: 'Orbitron', sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Overlay de activación de sonido -->
+    <div id="audio-starter">
+        <h2 style="font-family:'Orbitron'; font-size:2rem; text-align:center;">SISTEMA DE BIENVENIDA JOVEN TECH</h2>
+        <p style="color:#94a3b8; font-size:1.1rem; text-align:center; max-width:550px; line-height: 1.5;">
+            Haz clic en el botón para inicializar la síntesis de voz, los tonos Sci-Fi y el lienzo interactivo del auditorio.
+        </p>
+        <button class="start-btn" onclick="initializeAudioSystem()">🔊 INICIAR SISTEMA CENTRAL</button>
+    </div>
+
+    <!-- Botón discreto para minimizar panel de control -->
+    <button class="toggle-panel-btn" onclick="toggleOperatorPanel()">⚙️ CONTROL (M)</button>
+
+    <!-- Panel de Control para el Staff en el Auditorio -->
+    <div class="operator-panel" id="operatorPanel">
+        <div class="panel-header">
+            <span>PANEL DE MODERACIÓN</span>
+        </div>
+        <div class="toggle-row">
+            <span>Aprobación Manual:</span>
+            <label class="switch">
+                <input type="checkbox" id="moderationToggle" onchange="toggleModerationMode(this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="toggle-row">
+            <span>Audio Activado:</span>
+            <label class="switch">
+                <input type="checkbox" id="audioToggle" checked onchange="toggleAudioMode(this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">
+            Solicitudes pendientes (<span id="pendingCount">0</span>):
+        </div>
+        <div class="pending-list" id="pendingList">
+            <div style="font-size:0.75rem; color:#64748b; text-align:center; padding:10px;">Sin nombres por moderar</div>
+        </div>
+    </div>
+
+    <!-- Banner Superior -->
+    <header>
+        <div class="event-badge">Auditorio Principal</div>
+        <h1 class="main-title">JOVEN TECH 2026</h1>
+    </header>
+
+    <!-- Escenario Principal (Onda Siri + Texto Dinámico) -->
+    <main class="stage">
+        <canvas id="siri-wave"></canvas>
+
+        <div class="greeting-card" id="greetingCard">
+            <div class="welcome-label">¡Bienvenido/a!</div>
+            <div class="guest-name" id="guestNameDisplay">FULANITO</div>
+            <div class="subtitle-event">AL EVENTO JOVEN TECH</div>
+        </div>
+
+        <div class="idle-pulse" id="idleText">ESPERANDO INGRESOS DESDE LA ENTRADA...</div>
+    </main>
+
+    <!-- Historial de Últimos Ingresos -->
+    <footer class="recent-bar">
+        <div class="recent-title">ÚLTIMOS INGRESOS:</div>
+        <div class="recent-list" id="recentList"></div>
+    </footer>
+
+    <script>
+        const BROKER_URL = 'wss://broker.hivemq.com:8884/mqtt';
+        const TOPIC_NAME = 'joven_tech_event_saludos_2026_xyz';
+
+        let speechQueue = [];
+        let pendingApprovalQueue = [];
+        let isSpeaking = false;
+        let selectedVoice = null;
+        let audioContextAllowed = false;
+
+        // Opciones de Configuración
+        let moderationMode = false;
+        let audioEnabled = true;
+        const ENTRY_DELAY_MS = 3000; // 3 segundos de retraso por defecto para que caminen al auditorio
+
+        // Web Audio Context para Tonos Sci-Fi
+        let audioCtx = null;
+
+        // Configuración de la Onda Siri en Canvas
+        const canvas = document.getElementById('siri-wave');
+        const ctx = canvas.getContext('2d');
+        let wavePhase = 0;
+        let targetAmplitude = 0.1;
+        let currentAmplitude = 0.1;
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Dibujar Onda Dinámica Tipo Siri
+        function drawSiriWave() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            currentAmplitude += (targetAmplitude - currentAmplitude) * 0.08;
+            wavePhase += isSpeaking ? 0.08 : 0.02;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerY = height / 2;
+
+            const layers = [
+                { color: 'rgba(0, 242, 254, 0.7)', speed: 1.0, freq: 0.012, ampMult: 1.0 },
+                { color: 'rgba(127, 0, 255, 0.6)', speed: -0.8, freq: 0.009, ampMult: 0.8 },
+                { color: 'rgba(255, 0, 127, 0.5)', speed: 1.2, freq: 0.015, ampMult: 0.6 }
+            ];
+
+            layers.forEach(layer => {
+                ctx.beginPath();
+                ctx.lineWidth = isSpeaking ? 3.5 : 1.5;
+                ctx.strokeStyle = layer.color;
+
+                for (let x = 0; x <= width; x += 3) {
+                    const normalizedX = (x / width) * 2 - 1;
+                    const envelope = Math.pow(1 - Math.pow(normalizedX, 2), 2); 
+
+                    const sine = Math.sin(x * layer.freq + wavePhase * layer.speed);
+                    const y = centerY + sine * (centerY * 0.7) * currentAmplitude * layer.ampMult * envelope;
+
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            });
+
+            requestAnimationFrame(drawSiriWave);
+        }
+        drawSiriWave();
+
+        // Cargar Voces del Sistema
+        function loadVoices() {
+            if ('speechSynthesis' in window) {
+                const voices = window.speechSynthesis.getVoices();
+                selectedVoice = voices.find(v => v.lang.includes('es') && (v.name.includes('Google') || v.name.includes('Monica') || v.name.includes('Jorge') || v.name.includes('Diego') || v.name.includes('Helena'))) 
+                             || voices.find(v => v.lang.includes('es')) 
+                             || voices[0];
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+            loadVoices();
+        }
+
+        function initializeAudioSystem() {
+            audioContextAllowed = true;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            document.getElementById('audio-starter').style.display = 'none';
+
+            // Saludo e inicio
+            playSciFiChime();
+            setTimeout(() => {
+                speakText("Sistema listo para dar la bienvenida a Joven Tech.");
+            }, 500);
+
+            connectMQTT();
+        }
+
+        // Tono de Anuncio Sci-Fi (Chime)
+        function playSciFiChime() {
+            if (!audioContextAllowed || !audioEnabled || !audioCtx) return;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch (e) {
+                console.warn('Audio Context tone error', e);
+            }
+        }
+
+        // --- GESTIÓN DE COLA Y PROCESAMIENTO DE SALUDOS ---
+        function queueGuestGreeting(name) {
+            if (moderationMode) {
+                pendingApprovalQueue.push(name);
+                updatePendingUI();
+            } else {
+                // Agregar retardo de 3 segundos antes de meter a la fila activa
+                setTimeout(() => {
+                    speechQueue.push(name);
+                    processQueue();
+                }, ENTRY_DELAY_MS);
+            }
+        }
+
+        function processQueue() {
+            if (isSpeaking || speechQueue.length === 0) return;
+
+            isSpeaking = true;
+            const guestName = speechQueue.shift();
+
+            // Actualizar interfaz principal
+            document.getElementById('idleText').style.display = 'none';
+            const card = document.getElementById('greetingCard');
+            const nameEl = document.getElementById('guestNameDisplay');
+
+            nameEl.textContent = guestName.toUpperCase();
+            card.classList.add('active');
+            
+            targetAmplitude = 0.85;
+            addRecentGuest(guestName);
+
+            // Variedad de frases para evitar ser repetitivo
+            const GREETINGS = [
+                `¡Bienvenido ${guestName} al evento Joven Tech!`,
+                `¡Hola ${guestName}, que disfrutes Joven Tech!`,
+                `¡Qué bueno tenerte aquí, ${guestName}!`,
+                `¡Bienvenido a bordo, ${guestName}!`
+            ];
+            const randomPhrase = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+
+            // Tocar tono y luego hablar
+            playSciFiChime();
+
+            setTimeout(() => {
+                speakText(randomPhrase, () => {
+                    setTimeout(() => {
+                        card.classList.remove('active');
+                        targetAmplitude = 0.1;
+
+                        setTimeout(() => {
+                            isSpeaking = false;
+                            if (speechQueue.length === 0) {
+                                document.getElementById('idleText').style.display = 'block';
+                            }
+                            processQueue();
+                        }, 800);
+                    }, 1400);
+                });
+            }, 300);
+        }
+
+        function speakText(text, onEndCallback) {
+            if (!('speechSynthesis' in window) || !audioContextAllowed || !audioEnabled) {
+                if (onEndCallback) setTimeout(onEndCallback, 2000); // Si el audio está apagado, simular duración visual
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'es-ES';
+            utterance.rate = 0.98;
+            utterance.pitch = 1.05;
+
+            if (selectedVoice) utterance.voice = selectedVoice;
+
+            utterance.onend = () => { if (onEndCallback) onEndCallback(); };
+            utterance.onerror = () => { if (onEndCallback) onEndCallback(); };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function addRecentGuest(name) {
+            const container = document.getElementById('recentList');
+            const tag = document.createElement('div');
+            tag.className = 'guest-tag';
+            tag.textContent = name;
+            
+            container.insertBefore(tag, container.firstChild);
+            if (container.children.length > 8) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // --- PANEL DE CONTROL Y MODERACIÓN ---
+        function toggleOperatorPanel() {
+            document.getElementById('operatorPanel').classList.toggle('collapsed');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'm') toggleOperatorPanel();
+        });
+
+        function toggleModerationMode(enabled) {
+            moderationMode = enabled;
+        }
+
+        function toggleAudioMode(enabled) {
+            audioEnabled = enabled;
+            if (!audioEnabled && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function updatePendingUI() {
+            const container = document.getElementById('pendingList');
+            document.getElementById('pendingCount').textContent = pendingApprovalQueue.length;
+
+            if (pendingApprovalQueue.length === 0) {
+                container.innerHTML = '<div style="font-size:0.75rem; color:#64748b; text-align:center; padding:10px;">Sin nombres por moderar</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            pendingApprovalQueue.forEach((name, index) => {
+                const item = document.createElement('div');
+                item.className = 'pending-item';
+                item.innerHTML = `
+                    <span style="font-weight:bold; overflow:hidden; text-overflow:ellipsis;">${name}</span>
+                    <div>
+                        <button class="btn-approve" onclick="approveName(${index})">✓</button>
+                        <button class="btn-reject" onclick="rejectName(${index})">✗</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function approveName(index) {
+            const name = pendingApprovalQueue.splice(index, 1)[0];
+            updatePendingUI();
+            speechQueue.push(name);
+            processQueue();
+        }
+
+        function rejectName(index) {
+            pendingApprovalQueue.splice(index, 1);
+            updatePendingUI();
+        }
+
+        // --- CONEXIÓN MQTT EN TIEMPO REAL ---
+        function connectMQTT() {
+            const client = mqtt.connect(BROKER_URL);
+
+            client.on('connect', () => {
+                console.log('Conectado al servidor de mensajería del evento Joven Tech');
+                client.subscribe(TOPIC_NAME);
+            });
+
+            client.on('message', (topic, message) => {
+                if (topic === TOPIC_NAME) {
+                    try {
+                        const data = JSON.parse(message.toString());
+                        if (data.name) {
+                            queueGuestGreeting(data.name);
+                        }
+                    } catch (e) {
+                        console.error('Error procesando mensaje:', e);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

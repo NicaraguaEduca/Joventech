@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bienvenido a Joven Tech</title>
+
+    <!-- MQTT WebSockets Library -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@500;700&display=swap');
+
+        :root {
+            --bg-color: #080c1d;
+            --card-bg: #111830;
+            --neon-cyan: #00f2fe;
+            --neon-purple: #7f00ff;
+            --text-white: #ffffff;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 10%, #1e1b4b 0%, #080c1d 80%);
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .mobile-card {
+            background: rgba(17, 24, 48, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            border-radius: 28px;
+            padding: 35px 25px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(0, 242, 254, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .badge {
+            align-self: center;
+            background: rgba(127, 0, 255, 0.2);
+            border: 1px solid var(--neon-purple);
+            color: #c084fc;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.7rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff, var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.desc {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.4;
+            margin-top: -10px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--neon-cyan);
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: #0a0f24;
+            border: 2px solid rgba(0, 242, 254, 0.3);
+            border-radius: 18px;
+            padding: 18px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            outline: none;
+            transition: all 0.3s;
+            text-transform: capitalize;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+            background: #0f1738;
+        }
+
+        button.send-btn {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            color: #fff;
+            border: none;
+            padding: 20px;
+            border-radius: 18px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 242, 254, 0.3);
+            transition: all 0.2s;
+        }
+
+        button.send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(0.8);
+        }
+
+        button.send-btn:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .status-badge {
+            font-size: 0.95rem;
+            padding: 12px;
+            border-radius: 12px;
+            display: none;
+            animation: fadeIn 0.3s forwards;
+            line-height: 1.3;
+        }
+
+        .status-badge.success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10b981;
+            color: #34d399;
+            display: block;
+        }
+
+        .status-badge.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #f87171;
+            display: block;
+        }
+
+        .cooldown-timer {
+            font-size: 0.8rem;
+            color: #a7f3d0;
+            margin-top: 5px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-card">
+        <div class="badge">JOVEN TECH 2026</div>
+        <h1>¡Anuncia tu Llegada!</h1>
+        <p class="desc">Escribe tu primer nombre o apodo para ser saludado por la IA en los altavoces del auditorio.</p>
+
+        <div class="input-group">
+            <label for="nameInput">Tu Nombre / Apodo</label>
+            <input type="text" id="nameInput" placeholder="Ej: Carlos, María, Alex" maxlength="20" autocomplete="off" onkeypress="handleKey(event)">
+        </div>
+
+        <button class="send-btn" id="sendBtn" onclick="sendName()">ANUNCIAR MI LLEGADA 🚀</button>
+
+        <div id="status" class="status-badge"></div>
+    </div>
+
+    <script>
+        const BROKER_URL = 'wss://broker.hivemq.com:8884/mqtt';
+        const TOPIC_NAME = 'joven_tech_event_saludos_2026_xyz';
+
+        let client;
+        let isConnected = false;
+        let cooldownActive = false;
+
+        // Blacklist básica de palabras no permitidas en el cliente
+        const BLACKLIST = ['perro', 'gato', 'puto', 'puta', 'mierda', 'pendejo', 'estupido', 'marica', 'culero', 'cabron', 'anal', 'sexo', 'idiota', 'bobo', 'maldito'];
+
+        window.onload = () => {
+            client = mqtt.connect(BROKER_URL);
+
+            client.on('connect', () => {
+                isConnected = true;
+            });
+
+            client.on('offline', () => {
+                isConnected = false;
+            });
+        };
+
+        function handleKey(e) {
+            if (e.key === 'Enter') sendName();
+        }
+
+        function showStatus(msg, isSuccess = true) {
+            const el = document.getElementById('status');
+            el.innerHTML = msg;
+            el.className = `status-badge ${isSuccess ? 'success' : 'error'}`;
+        }
+
+        function isProfane(text) {
+            const cleanText = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            return BLACKLIST.some(badWord => cleanText.includes(badWord));
+        }
+
+        function sendName() {
+            if (cooldownActive) return;
+
+            const input = document.getElementById('nameInput');
+            const btn = document.getElementById('sendBtn');
+            const name = input.value.trim();
+
+            if (!name) {
+                showStatus('Por favor escribe tu nombre primero.', false);
+                return;
+            }
+
+            if (name.length < 2) {
+                showStatus('Tu nombre debe tener al menos 2 letras.', false);
+                return;
+            }
+
+            if (isProfane(name)) {
+                showStatus('Por favor ingresa un nombre respetuoso para el evento.', false);
+                return;
+            }
+
+            if (!isConnected) {
+                showStatus('Conectando con el auditorio, reintenta en un momento...', false);
+                return;
+            }
+
+            // Enviar payload
+            const payload = {
+                name: name,
+                timestamp: Date.now()
+            };
+
+            client.publish(TOPIC_NAME, JSON.stringify(payload));
+
+            // Feedback visual e inicio de cooldown de 15 segundos para evitar SPAM por usuario
+            showStatus(`¡Listo <b>${name}</b>!<br>Camina hacia el auditorio, escucharás tu saludo en unos segundos 🔊`, true);
+            input.value = '';
+            input.blur();
+
+            startCooldown(15);
+        }
+
+        function startCooldown(seconds) {
+            cooldownActive = true;
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            
+            let remaining = seconds;
+            btn.textContent = `ESPERA (${remaining}s)`;
+
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining > 0) {
+                    btn.textContent = `ESPERA (${remaining}s)`;
+                } else {
+                    clearInterval(interval);
+                    cooldownActive = false;
+                    btn.disabled = false;
+                    btn.textContent = 'ANUNCIAR MI LLEGADA 🚀';
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
