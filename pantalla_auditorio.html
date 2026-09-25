@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Joven Tech - Pantalla de Bienvenida</title>
+    <title>JovenTech - Pantalla de Bienvenida</title>
 
     <!-- MQTT WebSockets -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -348,7 +348,7 @@
 
     <!-- Overlay de activación de sonido -->
     <div id="audio-starter">
-        <h2 style="font-family:'Orbitron'; font-size:2rem; text-align:center;">SISTEMA DE BIENVENIDA JOVEN TECH</h2>
+        <h2 style="font-family:'Orbitron'; font-size:2rem; text-align:center;">SISTEMA DE BIENVENIDA JOVENTECH</h2>
         <p style="color:#94a3b8; font-size:1.1rem; text-align:center; max-width:550px; line-height: 1.5;">
             Haz clic en el botón para inicializar la síntesis de voz, los tonos Sci-Fi y el lienzo interactivo del auditorio.
         </p>
@@ -566,12 +566,20 @@
             targetAmplitude = 0.85;
             addRecentGuest(guestName);
 
-            // Variedad de frases para evitar ser repetitivo
+            // Variedad ampliada de frases para evitar ser repetitivo (12 opciones)
             const GREETINGS = [
                 `¡Bienvenido ${guestName} al evento Joven Tech!`,
                 `¡Hola ${guestName}, que disfrutes Joven Tech!`,
                 `¡Qué bueno tenerte aquí, ${guestName}!`,
-                `¡Bienvenido a bordo, ${guestName}!`
+                `¡Bienvenido a bordo, ${guestName}!`,
+                `¡Es un honor recibirte, ${guestName}!`,
+                `¡Prepárate para innovar, ${guestName}. Bienvenido!`,
+                `¡${guestName}, gracias por acompañarnos hoy!`,
+                `¡Excelente verte por aquí, ${guestName}!`,
+                `¡Adelante ${guestName}, el futuro te espera!`,
+                `¡Bienvenido ${guestName}! Disfruta de las conferencias.`,
+                `¡Hola ${guestName}, ¿listo para la experiencia Joven Tech?`,
+                `¡Un gusto saludarte, ${guestName}. Pasa adelante!`
             ];
             const randomPhrase = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
 
