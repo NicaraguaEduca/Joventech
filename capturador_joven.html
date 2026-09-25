@@ -178,12 +178,12 @@
 <body>
 
     <div class="mobile-card">
-        <div class="badge">JOVEN TECH 2026</div>
+        <div class="badge">JOVENTECH 2026</div>
         <h1>¡Anuncia tu Llegada!</h1>
-        <p class="desc">Escribe tu primer nombre o apodo para ser saludado por la IA en los altavoces del auditorio.</p>
+        <p class="desc">Escribe tu primer nombre para recibir tu saludo.</p>
 
         <div class="input-group">
-            <label for="nameInput">Tu Nombre / Apodo</label>
+            <label for="nameInput">Tu Nombre</label>
             <input type="text" id="nameInput" placeholder="Ej: Carlos, María, Alex" maxlength="20" autocomplete="off" onkeypress="handleKey(event)">
         </div>
 
@@ -200,8 +200,8 @@
         let isConnected = false;
         let cooldownActive = false;
 
-        // Blacklist básica de palabras no permitidas en el cliente
-        const BLACKLIST = ['perro', 'gato', 'puto', 'puta', 'mierda', 'pendejo', 'estupido', 'marica', 'culero', 'cabron', 'anal', 'sexo', 'idiota', 'bobo', 'maldito'];
+        // Blacklist ampliada de palabras no permitidas en el cliente
+        const BLACKLIST = ['perro', 'gato', 'puto', 'puta', 'mierda', 'pendejo', 'pendeja', 'estupido', 'estupida', 'marica', 'maricon', 'culero', 'culera', 'cabron', 'cabrona', 'anal', 'sexo', 'idiota', 'bobo', 'boba', 'maldito', 'maldita', 'verga', 'pija', 'pinga', 'picha', 'culo', 'teta', 'semen', 'ano', 'zorra', 'perra', 'imbecil', 'malparido', 'cerote', 'joder', 'coño', 'hijueputa', 'bastardo', 'gonorrea', 'cacorro', 'huevon', 'guevon'];
 
         window.onload = () => {
             client = mqtt.connect(BROKER_URL);
